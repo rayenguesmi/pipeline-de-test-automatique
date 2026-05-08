@@ -1,0 +1,74 @@
+services:
+
+  # ── MongoDB ──────────────────────────────────────────────────────────────────
+  # mongodb:
+  #   image: mongo:7
+  #   container_name: autotest_mongodb
+  #   restart: unless-stopped
+  #   ports:
+  #     - "27017:27017"
+  #   volumes:
+  #     - mongodb_data:/data/db
+  #   networks:
+  #     - autotest_network
+
+  # ── FastAPI AI Engine ────────────────────────────────────────────────────────
+  fastapi:
+    build:
+      context: ./autotest_package
+      dockerfile: Dockerfile
+    container_name: autotest_fastapi
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    shm_size: '2gb'
+    volumes:
+      - autotest_output:/app/autotest_output
+    environment:
+      - FASTAPI_URL=http://fastapi:8000
+    networks:
+      - autotest_network
+
+  # ── Node.js API ───────────────────────────────────────────────────────────────
+  server:
+    build:
+      context: ./user/user-entity-REACT-NODE-JS-/server
+      dockerfile: Dockerfile
+    container_name: autotest_server
+    restart: unless-stopped
+    ports:
+      - "5001:5000"
+    depends_on:
+      - fastapi
+    environment:
+      - PORT=5000
+      - MONGO_URI=mongodb://host.docker.internal:27017/user-auth
+      - JWT_SECRET=${JWT_SECRET}
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_PASS=${EMAIL_PASS}
+      - CLIENT_URL=http://localhost
+      - SERVER_URL=http://server:5000
+      - FASTAPI_URL=http://fastapi:8000
+    networks:
+      - autotest_network
+
+  # ── React Frontend (build + Nginx) ───────────────────────────────────────────
+  client:
+    build:
+      context: ./user/user-entity-REACT-NODE-JS-/client
+      dockerfile: Dockerfile
+    container_name: autotest_client
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - server
+    networks:
+      - autotest_network
+
+volumes:
+  autotest_output:
+
+networks:
+  autotest_network:
+    driver: bridge
