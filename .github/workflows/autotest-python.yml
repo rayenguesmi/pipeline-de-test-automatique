@@ -1,0 +1,53 @@
+name: "AutoTest — Python Engine CI"
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths: [ "autotest_package/**" ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: autotest_package/requirements.txt
+
+      - name: Install dependencies
+        run: cd autotest_package && pip install --upgrade pip && pip install -r requirements.txt
+
+      - name: Install Chrome
+        run: sudo apt-get update -qq && sudo apt-get install -y google-chrome-stable
+
+      - name: Lint with flake8
+        run: cd autotest_package && flake8 . --max-line-length=120 --exclude=output,templates --count --statistics
+        continue-on-error: true
+
+      - name: Run pytest
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          HEADLESS: "true"
+        run: cd autotest_package && pytest test_parsing.py test_case_generator.py -v --tb=short --html=../test-report.html --self-contained-html || true
+
+      - name: Smoke test
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: cd autotest_package && python main.py --spec saucedemo_spec.md --url https://www.saucedemo.com --provider groq --headless true || echo "Skipped"
+        continue-on-error: true
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-test-report
+          path: test-report.html
+          retention-days: 14

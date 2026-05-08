@@ -7,6 +7,7 @@ myenv/
 selenium-based-llm-model/tempCodeRunnerFile.py
 selenium-based-llm-model/url_extraction_20250612_115256.log
 autotest_package/.env
+user/**/.env
 autotest_package/reports
 autotest_package/test_scripts
 autotest_package/logs

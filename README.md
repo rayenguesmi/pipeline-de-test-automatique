@@ -1,3 +1,18 @@
+## CI/CD Pipeline
+
+![Python CI](https://github.com/rayenguesmi/pipeline-de-test-automatique/actions/workflows/autotest-python.yml/badge.svg)
+![Frontend CI](https://github.com/rayenguesmi/pipeline-de-test-automatique/actions/workflows/autotest-frontend.yml/badge.svg)
+
+### Required GitHub Secrets
+| Secret | Description |
+|--------|-------------|
+| `ANTHROPIC_API_KEY` | Anthropic API key for LLM generation |
+| `GROQ_API_KEY` | Groq API key for fast inference |
+| `MONGO_URI` | MongoDB Atlas connection string |
+| `JWT_SECRET` | JWT signing secret for authentication |
+
+---
+
 <div align="center">
 
 # AUTOTEST
