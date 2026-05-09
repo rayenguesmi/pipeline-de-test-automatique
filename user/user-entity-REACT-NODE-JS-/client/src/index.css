@@ -339,6 +339,10 @@ body {
   border-color: var(--color-brand);
   box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.15), 0 0 12px rgba(34,211,238,0.1);
 }
+.input-base option {
+  background: #1e293b;
+  color: #f1f5f9;
+}
 
 /* ─── Layout helpers ──────────────────────────────────────────────────────── */
 .layout-root {

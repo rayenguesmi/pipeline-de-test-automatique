@@ -9,7 +9,7 @@ import { useToast } from '../components/Toast';
 import { useAuth } from '../context/AuthContext';
 import {
   runTest, fetchMyTests, fetchTestProgress, fetchTestResults,
-  fetchFilteredTests, fetchCompareTests,
+  fetchCompareTests,
 } from '../api/auth';
 
 // ─── Icon helper ───────────────────────────────────────────────────────────────
@@ -672,7 +672,6 @@ const TestHistoryTable = ({ tests, onOpenReport }) => {
   const [llmFilter,    setLlmFilter]    = useState('all');
   const [fromDate,     setFromDate]     = useState('');
   const [toDate,       setToDate]       = useState('');
-  const [loading,      setLoading]      = useState(false);
   const [rows,         setRows]         = useState(tests);
   const [page,         setPage]         = useState(1);
   const perPage = 8;
@@ -680,27 +679,24 @@ const TestHistoryTable = ({ tests, onOpenReport }) => {
   // Sync with parent tests prop when no filters applied
   useEffect(() => { setRows(tests); }, [tests]);
 
-  const applyFilters = useCallback(async () => {
+  const applyFilters = useCallback(() => {
     const hasFilters = statusFilter !== 'all' || llmFilter !== 'all' || fromDate || toDate;
     if (!hasFilters) { setRows(tests); return; }
-    setLoading(true);
-    try {
-      const { data } = await fetchFilteredTests({
-        status: statusFilter !== 'all' ? statusFilter : undefined,
-        llm:    llmFilter    !== 'all' ? llmFilter    : undefined,
-        from:   fromDate || undefined,
-        to:     toDate   || undefined,
-      });
-      setRows((data.data || []).map(mapDbTest));
-    } catch (_) {
-      setRows(tests.filter((t) => {
-        if (statusFilter !== 'all' && t.status !== statusFilter) return false;
-        if (llmFilter    !== 'all' && t.llmEngine !== llmFilter) return false;
-        return true;
-      }));
-    } finally {
-      setLoading(false);
-    }
+    setRows(tests.filter((t) => {
+      if (statusFilter !== 'all' && t.status !== statusFilter) return false;
+      if (llmFilter    !== 'all' && t.llmEngine !== llmFilter) return false;
+      if (fromDate) {
+        const testDate = new Date(t.createdAt);
+        if (isNaN(testDate) || testDate < new Date(fromDate)) return false;
+      }
+      if (toDate) {
+        const testDate = new Date(t.createdAt);
+        const end = new Date(toDate);
+        end.setHours(23, 59, 59, 999);
+        if (isNaN(testDate) || testDate > end) return false;
+      }
+      return true;
+    }));
   }, [statusFilter, llmFilter, fromDate, toDate, tests]);
 
   useEffect(() => { applyFilters(); }, [applyFilters]);
@@ -762,9 +758,7 @@ const TestHistoryTable = ({ tests, onOpenReport }) => {
       </div>
 
       {/* Table */}
-      {loading ? (
-        <div style={{ padding: 16 }}>{[1,2,3].map((i) => <TestCardSkeleton key={i} />)}</div>
-      ) : paginated.length === 0 ? (
+      {paginated.length === 0 ? (
         <EmptyState type="tests" title="Aucun test trouvé" message="Ajustez les filtres ou lancez un nouveau test." />
       ) : (
         <>
@@ -831,7 +825,7 @@ const RunComparator = ({ tests }) => {
   const [loading, setLoading] = useState(false);
   const toast = useToast();
 
-  const completedTests = tests.filter((t) => t.status === 'pass' || t.status === 'fail');
+  const completedTests = tests;
 
   const handleCompare = async () => {
     if (!id1 || !id2 || id1 === id2) {
@@ -863,12 +857,12 @@ const RunComparator = ({ tests }) => {
         <span style={{ fontSize: 13, fontWeight: 600 }}>Comparateur de Runs</span>
         <select value={id1} onChange={(e) => setId1(e.target.value)} className="input-base" style={{ flex: 1, minWidth: 180, fontSize: 11, padding: '5px 8px' }}>
           <option value="">— Run A —</option>
-          {completedTests.map((t) => <option key={t.id} value={t.id}>{t.date} · {t.name.slice(0, 30)}</option>)}
+          {completedTests.map((t) => <option key={t.id} value={t.id}>{t.date} · {(t.name || t.url || '').slice(0, 30)}</option>)}
         </select>
         <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>vs</span>
         <select value={id2} onChange={(e) => setId2(e.target.value)} className="input-base" style={{ flex: 1, minWidth: 180, fontSize: 11, padding: '5px 8px' }}>
           <option value="">— Run B —</option>
-          {completedTests.map((t) => <option key={t.id} value={t.id}>{t.date} · {t.name.slice(0, 30)}</option>)}
+          {completedTests.map((t) => <option key={t.id} value={t.id}>{t.date} · {(t.name || t.url || '').slice(0, 30)}</option>)}
         </select>
         <button onClick={handleCompare} disabled={!id1 || !id2 || loading} className="btn btn-primary" style={{ fontSize: 12, padding: '6px 14px', opacity: (!id1 || !id2) ? 0.5 : 1 }}>
           {loading ? '…' : 'Comparer →'}
@@ -1155,7 +1149,7 @@ export default function UserDashboard() {
 
         {/* Run Comparator */}
         {!loading && completedTests.length >= 2 && (
-          <RunComparator tests={tests} />
+          <RunComparator tests={completedTests} />
         )}
 
         {/* Projects */}

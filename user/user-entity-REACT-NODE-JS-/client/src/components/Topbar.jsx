@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const Icon = ({ d, size = 18 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
@@ -45,8 +45,17 @@ const notifIcons = {
   warning: "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z",
 };
 
+const SPOTLIGHT_ITEMS = [
+  { label: 'Dashboard',        route: '/dashboard',  icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+  { label: 'Mes Tests',        route: '/my-tests',   icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' },
+  { label: 'Projets',          route: '/projects',   icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z' },
+  { label: 'URLs Surveillées', route: '/urls',       icon: 'M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1' },
+  { label: 'Nouveau Test',     route: '/dashboard',  icon: 'M12 4v16m8-8H4' },
+];
+
 export default function Topbar({ agentActive = false, agentMessage = '' }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const [showNotifs, setShowNotifs] = useState(false);
   const [showSpotlight, setShowSpotlight] = useState(false);
   const [notifications, setNotifications] = useState(mockNotifs);
@@ -239,20 +248,32 @@ export default function Topbar({ agentActive = false, agentMessage = '' }) {
               <kbd style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, background: 'var(--border)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>Esc</kbd>
             </div>
             <div style={{ padding: '8px 0' }}>
-              {['Dashboard', 'Nouveau Test', 'Mes Tests', 'Utilisateurs', 'Santé Système'].filter(item =>
-                searchVal === '' || item.toLowerCase().includes(searchVal.toLowerCase())
+              {SPOTLIGHT_ITEMS.filter(item =>
+                searchVal === '' || item.label.toLowerCase().includes(searchVal.toLowerCase())
               ).map(item => (
-                <div key={item} style={{
-                  display: 'flex', alignItems: 'center', gap: 12, padding: '10px 20px',
-                  cursor: 'pointer', transition: 'background 120ms ease',
-                  color: 'var(--text-secondary)', fontSize: 13,
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}>
-                  <Icon d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0" size={14} />
-                  {item}
+                <div key={item.label}
+                  onClick={() => { navigate(item.route); setShowSpotlight(false); setSearchVal(''); }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 12, padding: '10px 20px',
+                    cursor: 'pointer', transition: 'background 120ms ease',
+                    color: 'var(--text-secondary)', fontSize: 13,
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; }}>
+                  <Icon d={item.icon} size={14} />
+                  {item.label}
+                  <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                    {item.route}
+                  </span>
                 </div>
               ))}
+              {SPOTLIGHT_ITEMS.filter(item =>
+                searchVal !== '' && item.label.toLowerCase().includes(searchVal.toLowerCase())
+              ).length === 0 && searchVal !== '' && (
+                <div style={{ padding: '16px 20px', fontSize: 12, color: 'var(--text-muted)', textAlign: 'center' }}>
+                  Aucun résultat pour « {searchVal} »
+                </div>
+              )}
             </div>
             <div style={{ padding: '8px 20px 12px', borderTop: '1px solid var(--border)', display: 'flex', gap: 16 }}>
               <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>↑↓ Naviguer</span>
