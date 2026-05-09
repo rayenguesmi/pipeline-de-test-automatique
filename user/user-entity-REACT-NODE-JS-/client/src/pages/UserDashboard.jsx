@@ -957,7 +957,9 @@ const SummaryCard = memo(({ icon, title, value, sub, color = '#6366f1', progress
       </div>
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{title}</div>
-        <div style={{ fontSize: 24, fontWeight: 700, fontFamily: 'var(--font-mono)', marginBottom: 4 }}>{value}</div>
+        <div style={{ fontSize: 24, fontWeight: 700, fontFamily: 'var(--font-mono)', marginBottom: 4, color }}>
+            {typeof value === 'number' ? <CountUp target={value} /> : value}
+          </div>
         <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{sub}</div>
         {progress !== undefined && (
           <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 10 }}>

@@ -58,8 +58,51 @@ const mapTest = (t) => {
   };
 };
 
+// ── Timeline View ─────────────────────────────────────────────────────────────
+const TimelineView = ({ tests, onView, onDelete }) => (
+  <div style={{ position: 'relative', paddingLeft: 36 }}>
+    <div style={{ position: 'absolute', left: 12, top: 8, bottom: 8, width: 2, background: 'linear-gradient(to bottom, rgba(34,211,238,0.5), rgba(34,211,238,0.05))' }} />
+    {tests.map((test, i) => {
+      const s = STATUS[test.statut] || STATUS.RUNNING;
+      return (
+        <div key={test.id} style={{ position: 'relative', marginBottom: 14, animation: `fade-in-up 0.3s ease ${i * 0.04}s both` }}>
+          <div style={{ position: 'absolute', left: -30, top: 17, width: 12, height: 12, borderRadius: '50%', background: s.color, border: '2px solid var(--bg-base)', boxShadow: `0 0 8px ${s.color}` }} />
+          <div className="glass-card card-hover" style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 260 }}>
+                  {test.nom}
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '2px 8px', borderRadius: 99, fontSize: 10, fontWeight: 700, background: s.bg, color: s.color, border: `1px solid ${s.border}`, flexShrink: 0 }}>
+                  {test.statut === 'RUNNING' && <span style={{ width: 5, height: 5, borderRadius: '50%', background: s.color, animation: 'pulse-dot 1s ease-in-out infinite' }} />}
+                  {test.statut}
+                </span>
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, fontFamily: 'var(--font-mono)' }}>{test.url}</div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+              <div style={{ textAlign: 'right', marginRight: 4 }}>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{test.date}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{test.duree}</div>
+              </div>
+              <button onClick={() => onView(test)} className="btn btn-ghost" style={{ padding: '5px 12px', fontSize: 12 }}>
+                <Icon d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" size={13} />
+                Voir
+              </button>
+              <button onClick={() => onDelete(test.id)} className="btn btn-danger" style={{ padding: '5px 10px', fontSize: 13 }}>
+                <Icon d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" size={13} />
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+);
+
 export default function MesTests() {
   const [filter,       setFilter]       = useState('TOUS');
+  const [viewMode,     setViewMode]     = useState('table');
   const [tests,        setTests]        = useState([]);
   const [loading,      setLoading]      = useState(true);
   const [wizardOpen,   setWizardOpen]   = useState(false);
@@ -103,9 +146,28 @@ export default function MesTests() {
               {loading ? '…' : `${tests.length} test${tests.length !== 1 ? 's' : ''} au total`}
             </p>
           </div>
-          <button onClick={() => setWizardOpen(true)} className="btn btn-primary">
-            + Nouveau Test
-          </button>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            {/* View mode toggle */}
+            <div style={{ display: 'flex', gap: 3, background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: 4, border: '1px solid var(--border)' }}>
+              <button
+                onClick={() => setViewMode('table')}
+                title="Vue tableau"
+                style={{ padding: '5px 10px', borderRadius: 7, cursor: 'pointer', border: 'none', background: viewMode === 'table' ? 'rgba(34,211,238,0.12)' : 'transparent', color: viewMode === 'table' ? 'var(--color-brand)' : 'var(--text-muted)', transition: 'all 200ms ease' }}
+              >
+                <Icon d="M3 10h18M3 6h18M3 14h18M3 18h18" size={14} />
+              </button>
+              <button
+                onClick={() => setViewMode('timeline')}
+                title="Vue timeline"
+                style={{ padding: '5px 10px', borderRadius: 7, cursor: 'pointer', border: 'none', background: viewMode === 'timeline' ? 'rgba(34,211,238,0.12)' : 'transparent', color: viewMode === 'timeline' ? 'var(--color-brand)' : 'var(--text-muted)', transition: 'all 200ms ease' }}
+              >
+                <Icon d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" size={14} />
+              </button>
+            </div>
+            <button onClick={() => setWizardOpen(true)} className="btn btn-primary">
+              + Nouveau Test
+            </button>
+          </div>
         </div>
 
         {/* ── Filter tabs ─────────────────────────────────────────────────── */}
@@ -148,7 +210,7 @@ export default function MesTests() {
               </div>
             ))}
           </div>
-        ) : filtered.length === 0 ? (
+        ) : filtered.length === 0 && viewMode !== 'timeline' ? (
           /* ── Empty state ────────────────────────────────────────────────── */
           <div style={{ textAlign: 'center', padding: '80px 0' }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
@@ -164,6 +226,17 @@ export default function MesTests() {
               + Nouveau Test
             </button>
           </div>
+        ) : viewMode === 'timeline' ? (
+          /* ── Timeline ───────────────────────────────────────────────────── */
+          filtered.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '80px 0' }}>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>🕐</div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>Aucun test à afficher</div>
+              <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Changez le filtre ou lancez un nouveau test.</div>
+            </div>
+          ) : (
+            <TimelineView tests={filtered} onView={setSelectedTest} onDelete={handleDelete} />
+          )
         ) : (
           /* ── Table ──────────────────────────────────────────────────────── */
           <div className="glass-card" style={{ overflow: 'hidden' }}>

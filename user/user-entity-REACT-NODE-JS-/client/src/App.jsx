@@ -1,7 +1,8 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './components/Toast';
 import Sidebar from './components/Sidebar';
+import ParticlesBackground from './components/ParticlesBackground';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
@@ -42,6 +43,7 @@ const LoadingScreen = () => (
 // ─── Protected Route ─────────────────────────────────────────────────────────
 const ProtectedRoute = ({ children, role }) => {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) return <LoadingScreen />;
 
@@ -60,8 +62,10 @@ const ProtectedRoute = ({ children, role }) => {
   return (
     <div className="layout-root">
       <Sidebar />
-      <main style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-        {children}
+      <main style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 1 }}>
+        <div key={location.pathname} style={{ animation: 'page-fade 0.25s ease', flex: 1, display: 'flex', flexDirection: 'column' }}>
+          {children}
+        </div>
       </main>
     </div>
   );
@@ -73,6 +77,7 @@ export default function App() {
     <AuthProvider>
       <ToastProvider>
         <BrowserRouter>
+          <ParticlesBackground />
           <Routes>
             {/* Public Routes */}
             <Route path="/register" element={<Register />} />
